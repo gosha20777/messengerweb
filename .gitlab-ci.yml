@@ -1,37 +1,30 @@
 stages:
-#  - sast
   - build
-  - publish
-  - analyze
-# тесты отключены, потому что требуют .docx файлы, которые нельзя лить в гит
-# если это ПО вдруг понадобится кому-то, перепишу тесты
-# - test
+  - publish_win-x64
+  - publish_linux-x64
+  
+#  - analyze
+#  - test
 
 build_job:
     stage: build
     tags:
         - dotnetcorewin
     script:
-        - dotnet build .\src\DocGenTool.sln
+        - dotnet build '.\src\MessengerWeb.sln'
         
-publish_job:
-    stage: publish
+publish_job_win:
+    stage: publish_win-x64
     tags:
         - dotnetcorewin
     script:
-        - Remove-Item \Publish\* -Recurse -Force
-        - dotnet publish .\src\DocBuilder.Client\DocBuilder.Client.csproj -o \Publish --runtime win-x64 --self-contained true
-
-code_analyze_job:
-    stage: analyze
+        - Remove-Item \MessengerWeb_publish_win\* -Recurse -Force
+        - dotnet publish '.\src\Server\MessengerWeb.Server.csproj' -o \MessengerWeb_publish_win --runtime win-x64 -p:PublishSingleFile=true --self-contained true
+        
+publish_job_linux:
+    stage: publish_linux-x64
     tags:
         - dotnetcorewin
     script:
-        - echo "Here would be code analizer soon"
-
-# test_job:
-#  stage: test
-#  tags:
-#        - dotnetcorewin
-#  script:
-#        - dotnet test .\src\DocBuilder.Core.Tests\DocBuilder.Core.Tests.csproj
+        - Remove-Item \MessengerWeb_publish_linux\* -Recurse -Force
+        - dotnet publish '.\src\Server\MessengerWeb.Server.csproj' -o \MessengerWeb_publish_linux --runtime linux-x64 --self-contained true
