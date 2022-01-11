@@ -1,0 +1,37 @@
+stages:
+#  - sast
+  - build
+  - publish
+  - analyze
+# тесты отключены, потому что требуют .docx файлы, которые нельзя лить в гит
+# если это ПО вдруг понадобится кому-то, перепишу тесты
+# - test
+
+build_job:
+    stage: build
+    tags:
+        - dotnetcorewin
+    script:
+        - dotnet build .\src\DocGenTool.sln
+        
+publish_job:
+    stage: publish
+    tags:
+        - dotnetcorewin
+    script:
+        - Remove-Item \Publish\* -Recurse -Force
+        - dotnet publish .\src\DocBuilder.Client\DocBuilder.Client.csproj -o \Publish --runtime win-x64 --self-contained true
+
+code_analyze_job:
+    stage: analyze
+    tags:
+        - dotnetcorewin
+    script:
+        - echo "Here would be code analizer soon"
+
+# test_job:
+#  stage: test
+#  tags:
+#        - dotnetcorewin
+#  script:
+#        - dotnet test .\src\DocBuilder.Core.Tests\DocBuilder.Core.Tests.csproj
