@@ -19,7 +19,7 @@ publish_job_win:
         - dotnetcorewin
     script:
         - Remove-Item \MessengerWeb_publish_win\* -Recurse -Force
-        - dotnet publish '.\src\Server\MessengerWeb.Server.csproj' -o \MessengerWeb_publish_win --runtime win-x64 -p:PublishSingleFile=true --self-contained true
+        - dotnet publish '.\src\Server\MessengerWeb.Server.csproj' -o \MessengerWeb_publish_win --runtime win-x64 --self-contained true
         
 publish_job_linux:
     stage: publish_linux-x64
