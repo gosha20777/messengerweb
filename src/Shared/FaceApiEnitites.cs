@@ -28,15 +28,29 @@ namespace MessengerWeb.Shared
         public string Status { get; set; }
 
         [JsonPropertyName("result")]
-        public Result Result { get; set; }
+        public LivenessResult Result { get; set; }
     }
 
-    public class Result
+    public class LivenessResult
     {
         [JsonPropertyName("score")]
         public double Score { get; set; }
     }
 
+    public class CommonTaskResult : IFaceApiTaskResult
+    {
+        [JsonPropertyName("status")]
+        public string Status { get; set; }
+
+        [JsonPropertyName("result")]
+        public MatchResult Result { get; set; }
+    }
+
+    public class MatchResult
+    {
+        [JsonPropertyName("face_id")]
+        public string FaceId { get; set; }
+    }
 
     public class FaceApiTaskResultError : IFaceApiTaskResult
     {

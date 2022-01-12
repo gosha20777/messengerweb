@@ -2,6 +2,7 @@
 using MessengerWeb.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
@@ -18,11 +19,13 @@ namespace MessengerWeb.Server.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly HttpClient httpClient = new HttpClient();
         private readonly ApiRequestsService _apiRequestsService;
+        private readonly IConfiguration _configuration;
 
-        public HomeController(ILogger<HomeController> logger, ApiRequestsService apiRequestsService)
+        public HomeController(ILogger<HomeController> logger, ApiRequestsService apiRequestsService, IConfiguration configuration)
         {
             _logger = logger;
             _apiRequestsService = apiRequestsService;
+            _configuration = configuration;
         }
 
         [HttpPost("liveness")]
@@ -39,9 +42,11 @@ namespace MessengerWeb.Server.Controllers
                     var bytes = ms.ToArray();
 
                     var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
-                    var livenessTaskResponse = await _apiRequestsService.GetExternalApiLivenessTaskId(fileHashResponse.Hash, "fea041df-4e7e-4e59-ae9a-68a4500a1754");
+                    var livenessTask = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetLivenessTask"], 
+                                                                             fileHashResponse.Hash, 
+                                                                             "fea041df-4e7e-4e59-ae9a-68a4500a1754");
                     await Task.Delay(500);
-                    var livenessTaskResult = await _apiRequestsService.GetLivenessTaskResult(livenessTaskResponse.TaskId);
+                    var livenessTaskResult = await _apiRequestsService.GetTaskResult(livenessTask.TaskId, Operation.Liveness);
                     if (livenessTaskResult is LivenessTaskResult)
                     {
                         var livenessResult = (LivenessTaskResult)livenessTaskResult;
@@ -53,12 +58,12 @@ namespace MessengerWeb.Server.Controllers
         }
 
         [HttpPost("match")]
-        public async Task<IActionResult> Post([FromForm(Name = "data")] IFormFile file)
+        public async Task<IActionResult> PostFrameGetMatch([FromForm(Name = "data")] IFormFile file)
         {
             if (file is null)
                 return StatusCode(400, "No photo, formFile is null");
 
-           /* string content = String.Empty;
+            string content = "Match validation error. ";
             using (Stream stream = file.OpenReadStream())
             {
                 using (MemoryStream ms = new MemoryStream())
@@ -66,19 +71,50 @@ namespace MessengerWeb.Server.Controllers
                     stream.CopyTo(ms);
                     var bytes = ms.ToArray();
 
-                    string fileHash = await _apiRequestsService.GetExternalApiFileHash(bytes);
-                    var livenessTaskResponse = await _apiRequestsService.GetExternalApiLivenessTaskId(fileHash, "fea041df-4e7e-4e59-ae9a-68a4500a1754");
-                    var livenessTaskResult = await _apiRequestsService.GetLivenessTaskResult(livenessTaskResponse.TaskId);
-                    if (livenessTaskResult is FaceApiTaskResult)
+                    var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
+                    var matchTask = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetBestMatchTask"], 
+                                                                          fileHashResponse.Hash, 
+                                                                          "fea041df-4e7e-4e59-ae9a-68a4500a1754");
+                    await Task.Delay(500);
+                    var matchTaskResult = await _apiRequestsService.GetTaskResult(matchTask.TaskId, Operation.Match);
+                    if (matchTaskResult is CommonTaskResult)
                     {
-                        var livenessResult = (FaceApiTaskResult)livenessTaskResult;
-                        content = livenessResult.Result.FaceId;
+                        var matchResult = (CommonTaskResult)matchTaskResult;
+                        content = matchResult.Result?.FaceId;
                     }
-                    else
-                        message += "Liveness validation error. ";
                 }
-            }*/
-            return Ok();
+            }
+            return Ok(content);
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Post([FromForm(Name = "data")] IFormFile file)
+        {
+            if (file is null)
+                return StatusCode(400, "No photo, formFile is null");
+
+            string content = "Register validation error. ";
+            using (Stream stream = file.OpenReadStream())
+            {
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    stream.CopyTo(ms);
+                    var bytes = ms.ToArray();
+
+                    var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
+                    var livenessTaskResponse = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetRegisterTask"], 
+                                                                                     fileHashResponse.Hash, 
+                                                                                     "fea041df-4e7e-4e59-ae9a-68a4500a1754");
+                    await Task.Delay(500);
+                    var matchTaskResult = await _apiRequestsService.GetTaskResult(livenessTaskResponse.TaskId, Operation.Register);
+                    if (matchTaskResult is CommonTaskResult)
+                    {
+                        var matchResult = (CommonTaskResult)matchTaskResult;
+                        content = matchResult.Result?.FaceId;
+                    }
+                }
+            }
+            return Ok(content);
         }
     }
 }

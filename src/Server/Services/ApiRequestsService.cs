@@ -1,6 +1,7 @@
 ﻿using MessengerWeb.Shared;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -30,10 +31,10 @@ namespace MessengerWeb.Server.Services
             return JsonSerializer.Deserialize<FileHashEntity>(content);
         }
 
-        internal async Task<FaceApiTaskResponse> GetExternalApiLivenessTaskId(string fileHash, string engineId)
+        internal async Task<FaceApiTaskResponse> ProcessTask(string url, string fileHash, string engineId)
         {
             HttpResponseMessage response = new();
-            using (var request = new HttpRequestMessage(new HttpMethod("POST"), _configuration["ApiGates:GetLivenessTask"]))
+            using (var request = new HttpRequestMessage(new HttpMethod("POST"), _configuration["ApiGates:GetRegisterTask"]))
             {
                 var livenessBodyRequest = new StringContent(JsonSerializer.Serialize(new FaceApiTaskRequest()
                 {
@@ -48,25 +49,8 @@ namespace MessengerWeb.Server.Services
             return JsonSerializer.Deserialize<FaceApiTaskResponse>(content);
         }
 
-        internal async Task<FaceApiTaskResponse> GetExternalApiBestMatchTaskId(string fileHash, string engineId)
-        {
-            HttpResponseMessage response = new();
-            using (var request = new HttpRequestMessage(new HttpMethod("POST"), _configuration["ApiGates:GetBestMatchTask"]))
-            {
-                var livenessBodyRequest = new StringContent(JsonSerializer.Serialize(new FaceApiTaskRequest()
-                {
-                    EngineId = engineId,
-                    FileHash = fileHash
-                }));
-                request.Content = livenessBodyRequest;
-                request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                response = await _httplClient.SendAsync(request);
-            }
-            string content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<FaceApiTaskResponse>(content);
-        }
 
-        internal async Task<IFaceApiTaskResult> GetLivenessTaskResult(string taskId)
+        internal async Task<IFaceApiTaskResult> GetTaskResult(string taskId, Operation operation)
         {
             HttpResponseMessage response = new();
             string url = $"{_configuration["ApiGates:GetTaskResult"]}?uuid={taskId}";
@@ -78,9 +62,22 @@ namespace MessengerWeb.Server.Services
             string content = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
-                return JsonSerializer.Deserialize<LivenessTaskResult>(content);
+            {
+                switch(operation)
+                {
+                    case Operation.Liveness:
+                        return JsonSerializer.Deserialize<LivenessTaskResult>(content);
+                    case Operation.Register:
+                    case Operation.Match:
+                        return JsonSerializer.Deserialize<CommonTaskResult>(content);
+                    default:
+                        return null;
+                }
+            }
             else
                 return JsonSerializer.Deserialize<FaceApiTaskResultError>(content);
+
         }
+
     }
 }

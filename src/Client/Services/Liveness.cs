@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 
 namespace MessengerWeb.Client.Services
 {
-    public class LivenessService
+    public class Liveness
     {
         public async Task<double> Get(string imageBytes, HttpClient Http)
         {
-            var data = Convert.FromBase64String(imageBytes); // get the image as byte array
+            var data = Convert.FromBase64String(imageBytes);
             var contents = new StreamContent(new MemoryStream(data));
             var form = new MultipartFormDataContent();
             form.Add(contents, "data", "image");

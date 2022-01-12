@@ -1,4 +1,50 @@
 ﻿@page "/register"
 
-<h1>Регистрация</h1>
+@using System.Drawing;
+@using System.IO;
+@using System.Net.Http
+@using System.Timers
+@using MessengerWeb.Client.Services
 
+@inject IJSRuntime JSRuntime;
+@inject HttpClient Http
+@inject Services.Register RegisterService
+
+<div>
+    <h1>Регистрация</h1>
+</div>
+
+<div>
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="capturedImage" width="320" height="240" style="margin-left:20px"></canvas>
+</div>
+
+<div>
+    <button type="button" class="btn btn-primary" @onclick="StartVideo">Play</button>
+    <button type="button" class="btn btn-primary" @onclick="@(() => RegisterInExternalApi(null, null))">Зарегистрировать</button>
+</div>
+
+ <h1>Register: @RegisterResponse</h1>
+
+@code {
+    private string RegisterResponse { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await StartVideo();
+    }
+
+    private async Task StartVideo()
+    {
+        await JSRuntime.InvokeVoidAsync("startVideo");
+    }
+
+    private async void RegisterInExternalApi(object source, ElapsedEventArgs e)
+    {
+        await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
+        var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
+        var liveness = await RegisterService.Get(imageBytes, Http);
+        RegisterResponse = liveness.ToString();
+        StateHasChanged();
+    }
+}

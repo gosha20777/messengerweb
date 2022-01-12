@@ -3,47 +3,67 @@
 @using System.Drawing;
 @using System.IO;
 @using System.Net.Http
+@using System.Timers
 @using MessengerWeb.Client.Services
 
 @inject IJSRuntime JSRuntime;
 @inject HttpClient Http
-@inject LivenessService LivenessService
+@inject Services.Liveness LivenessService
+@inject Services.Matching MatchingService
 
 <div>
-    <h1>Video Test</h1>
+    <h1>Детекция</h1>
 </div>
 
 <video id="video" width="640" height="480" autoplay></video>
 
 <div>
     <button type="button" class="btn btn-primary" @onclick="StartVideo">Play</button>
-    <button type="button" class="btn btn-primary" @onclick="TakePictureToExternalApi">Send to ext api</button>
+    <button type="button" class="btn btn-primary" @onclick="@(() =>GetLivenessFromExternalApi(null, null))">Send to ext api</button>
 </div>
 
   <canvas id="capturedImage" width="640" height="480" style="display: none"></canvas>
   <h1>Liveness: @LivenessResponse</h1>
+  <h1>Match: @MatchResponse</h1>
 
 @code {
     private string LivenessResponse { get; set; }
-    private TimerAsync _timerAsync;
+    private string MatchResponse { get; set; }
+
+    private Timer _livenessTimer;
+    private Timer _matchingTimer;
 
     protected override void OnInitialized()
     {
-        _timerAsync = new TimerAsync(delay: 5000);
+        _livenessTimer = new Timer(interval: 5000);
+        _matchingTimer = new Timer(interval: 5000);
+
+        _livenessTimer.Elapsed += GetLivenessFromExternalApi;
+        _matchingTimer.Elapsed += GetMatchFromExternalApi;
     }
 
     private async Task StartVideo()
     {
         await JSRuntime.InvokeVoidAsync("startVideo");
-        await _timerAsync.Start(async () => await TakePictureToExternalApi());
+
+        _livenessTimer.Enabled = true;
+        _matchingTimer.Enabled = true;
     }
 
-    private async Task TakePictureToExternalApi()
+    private async void GetLivenessFromExternalApi(object source, ElapsedEventArgs e)
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
         var liveness = await LivenessService.Get(imageBytes, Http);
         LivenessResponse = liveness.ToString();
         StateHasChanged();
+    }
+
+    private async void GetMatchFromExternalApi(object source, ElapsedEventArgs e)
+    {
+        await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
+        var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
+        var match = await MatchingService.Get(imageBytes, Http);
+        MatchResponse = match;
     }
 }
