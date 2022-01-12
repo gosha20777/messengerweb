@@ -8,21 +8,20 @@
 
 @inject IJSRuntime JSRuntime;
 @inject HttpClient Http
-@inject Services.Liveness LivenessService
-@inject Services.Matching MatchingService
+@inject Services.EnginesHttpRepository Repository
 
 <div>
     <h1>Детекция</h1>
 </div>
 
-<video id="video" width="640" height="480" autoplay></video>
+<video id="video" width="320" height="240" autoplay></video>
 
 <div>
     <button type="button" class="btn btn-primary" @onclick="StartVideo">Play</button>
     <button type="button" class="btn btn-primary" @onclick="@(() =>GetLivenessFromExternalApi(null, null))">Send to ext api</button>
 </div>
 
-  <canvas id="capturedImage" width="640" height="480" style="display: none"></canvas>
+  <canvas id="capturedImage" width="320" height="240" style="display: none"></canvas>
   <h1>Liveness: @LivenessResponse</h1>
   <h1>Match: @MatchResponse</h1>
 
@@ -54,8 +53,7 @@
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
-        var liveness = await LivenessService.Get(imageBytes, Http);
-        LivenessResponse = liveness.ToString();
+        LivenessResponse = await Repository.Post(imageBytes, Http, "Home/liveness");
         StateHasChanged();
     }
 
@@ -63,7 +61,6 @@
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
-        var match = await MatchingService.Get(imageBytes, Http);
-        MatchResponse = match;
+        MatchResponse = await Repository.Post(imageBytes, Http, "Home/match");
     }
 }

@@ -8,14 +8,14 @@
 
 @inject IJSRuntime JSRuntime;
 @inject HttpClient Http
-@inject Services.Register RegisterService
+@inject Services.EnginesHttpRepository Repository
 
 <div>
     <h1>Регистрация</h1>
 </div>
 
 <div>
-    <video id="video" width="640" height="480" autoplay></video>
+    <video id="video" width="320" height="240" autoplay></video>
     <canvas id="capturedImage" width="320" height="240" style="margin-left:20px"></canvas>
 </div>
 
@@ -24,7 +24,7 @@
     <button type="button" class="btn btn-primary" @onclick="@(() => RegisterInExternalApi(null, null))">Зарегистрировать</button>
 </div>
 
- <h1>Register: @RegisterResponse</h1>
+ <h3>Register: @RegisterResponse</h3>
 
 @code {
     private string RegisterResponse { get; set; }
@@ -43,8 +43,10 @@
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
-        var liveness = await RegisterService.Get(imageBytes, Http);
-        RegisterResponse = liveness.ToString();
+        string result = await Repository.Post(imageBytes, Http, "Home/register");
+
+        if (result == "failed") RegisterResponse = "Person already registered";
+        else RegisterResponse = $"New person registered! ID is {result}";
         StateHasChanged();
     }
 }

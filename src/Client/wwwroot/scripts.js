@@ -16,7 +16,7 @@
 window.Snap = async (src, dest) => {
     let video = document.getElementById(src);
     let ctx = get2DContext(dest);
-    ctx.drawImage(video, 0, 0, 640, 480);
+    ctx.drawImage(video, 0, 0, 320, 240);
 }
 
 // Get image as base64 string

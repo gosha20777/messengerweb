@@ -34,7 +34,7 @@ namespace MessengerWeb.Server.Services
         internal async Task<FaceApiTaskResponse> ProcessTask(string url, string fileHash, string engineId)
         {
             HttpResponseMessage response = new();
-            using (var request = new HttpRequestMessage(new HttpMethod("POST"), _configuration["ApiGates:GetRegisterTask"]))
+            using (var request = new HttpRequestMessage(new HttpMethod("POST"), url))
             {
                 var livenessBodyRequest = new StringContent(JsonSerializer.Serialize(new FaceApiTaskRequest()
                 {

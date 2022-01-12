@@ -93,28 +93,22 @@ namespace MessengerWeb.Server.Controllers
             if (file is null)
                 return StatusCode(400, "No photo, formFile is null");
 
-            string content = "Register validation error. ";
             using (Stream stream = file.OpenReadStream())
+            using (MemoryStream ms = new MemoryStream())
             {
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    stream.CopyTo(ms);
-                    var bytes = ms.ToArray();
+                stream.CopyTo(ms);
+                var bytes = ms.ToArray();
 
-                    var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
-                    var livenessTaskResponse = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetRegisterTask"], 
-                                                                                     fileHashResponse.Hash, 
-                                                                                     "fea041df-4e7e-4e59-ae9a-68a4500a1754");
-                    await Task.Delay(500);
-                    var matchTaskResult = await _apiRequestsService.GetTaskResult(livenessTaskResponse.TaskId, Operation.Register);
-                    if (matchTaskResult is CommonTaskResult)
-                    {
-                        var matchResult = (CommonTaskResult)matchTaskResult;
-                        content = matchResult.Result?.FaceId;
-                    }
-                }
+                var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
+                var livenessTaskResponse = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetRegisterTask"], 
+                                                                                    fileHashResponse.Hash, 
+                                                                                    "fea041df-4e7e-4e59-ae9a-68a4500a1754");
+                await Task.Delay(500);
+                var matchTaskResult = await _apiRequestsService.GetTaskResult(livenessTaskResponse.TaskId, Operation.Register);
+                var matchResult = (CommonTaskResult)matchTaskResult;
+                return matchResult.Status == "failed" ? StatusCode(409, matchResult.Status) 
+                                                      : Ok(matchResult.Result.FaceId);
             }
-            return Ok(content);
         }
     }
 }
