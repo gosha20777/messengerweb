@@ -20,11 +20,10 @@
 </div>
 
 <div>
-    <button type="button" class="btn btn-primary" @onclick="StartVideo">Play</button>
     <button type="button" class="btn btn-primary" @onclick="@(() => RegisterInExternalApi(null, null))">Зарегистрировать</button>
 </div>
 
- <h3>Register: @RegisterResponse</h3>
+ <h3>@RegisterResponse</h3>
 
 @code {
     private string RegisterResponse { get; set; }
@@ -45,8 +44,8 @@
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
         string result = await Repository.Post(imageBytes, Http, "Home/register");
 
-        if (result == "failed") RegisterResponse = "Person already registered";
-        else RegisterResponse = $"New person registered! ID is {result}";
+        if (result == "failed") RegisterResponse = "Лицо уже зарегистрировано";
+        else RegisterResponse = $"Новое лицо зарегистрировано! ID: \"{result}\"";
         StateHasChanged();
     }
 }

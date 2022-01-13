@@ -8,7 +8,7 @@
             } catch (error) {
                 video.src = window.URL.createObjectURL(stream);
             }
-            video.play();
+            //video.play();
         });
     }
 }

@@ -5,6 +5,7 @@
 @using System.Net.Http
 @using System.Timers
 @using MessengerWeb.Client.Services
+@implements IDisposable
 
 @inject IJSRuntime JSRuntime;
 @inject HttpClient Http
@@ -12,13 +13,13 @@
 
 <div>
     <h1>Детекция</h1>
+     <button type="button" class="btn btn-primary" @onclick="StartCamera">Включить камеру</button>
 </div>
 
-<video id="video" width="320" height="240" autoplay></video>
+<video id="video" width="320" height="240" controls></video>
 
 <div>
-    <button type="button" class="btn btn-primary" @onclick="StartVideo">Play</button>
-    <button type="button" class="btn btn-primary" @onclick="@(() =>GetLivenessFromExternalApi(null, null))">Send to ext api</button>
+    <button type="button" class="btn btn-primary" @onclick="@(() =>GetLivenessFromExternalApi(null, null))">Принудительный обмен данными</button>
 </div>
 
   <canvas id="capturedImage" width="320" height="240" style="display: none"></canvas>
@@ -41,7 +42,7 @@
         _matchingTimer.Elapsed += GetMatchFromExternalApi;
     }
 
-    private async Task StartVideo()
+    private async Task StartCamera()
     {
         await JSRuntime.InvokeVoidAsync("startVideo");
 
@@ -62,5 +63,11 @@
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
         MatchResponse = await Repository.Post(imageBytes, Http, "Home/match");
+    }
+
+    void IDisposable.Dispose()
+    {
+        _livenessTimer.Enabled = false;
+        _matchingTimer.Enabled = false;
     }
 }
