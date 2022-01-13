@@ -1,0 +1,6 @@
+﻿.round-border {
+    border-radius: 10px;
+    border: solid 1px;
+    border-color: lightgray;
+    margin-right: 10px;
+}

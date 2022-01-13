@@ -5,33 +5,66 @@
 @using System.Net.Http
 @using System.Timers
 @using MessengerWeb.Client.Services
-@implements IDisposable
+@implements IAsyncDisposable
 
 @inject IJSRuntime JSRuntime;
 @inject HttpClient Http
 @inject Services.EnginesHttpRepository Repository
 
-<div>
-    <h1>Детекция</h1>
-     <button type="button" class="btn btn-primary" @onclick="StartCamera">Включить камеру</button>
+<h1>Детекция</h1>
+
+<div style="display: flex">
+    <label class="switch">
+        <input type="checkbox"
+            id="flexSwitchCheckDefault" 
+            @onchange="@(async (e) => await ToggleCamera())">>
+        <span class="slider round"></span>
+    </label>
+    <h3 style="margin-left:10px">Камера</h3>
 </div>
 
-<video id="video" width="320" height="240" controls></video>
+<div style="display: flex">
+    <video class="round-border" id="video" width="480" height="360" controls></video>
 
-<div>
-    <button type="button" class="btn btn-primary" @onclick="@(() =>GetLivenessFromExternalApi(null, null))">Принудительный обмен данными</button>
+    @if(!LivenessGood)
+    {
+     <div class="alert alert-warning alert-dismissible fade show">
+        <strong></strong> Лица в кадре не обнаружены.
+    </div>
+    }
+
+    @if(!MatchGood)
+    {
+         <div class="alert alert-warning alert-dismissible fade show">
+            <strong></strong> Не удалось опознать лицо. Угроза безопасности!
+        </div>
+    }
 </div>
 
-  <canvas id="capturedImage" width="320" height="240" style="display: none"></canvas>
-  <h1>Liveness: @LivenessResponse</h1>
-  <h1>Match: @MatchResponse</h1>
+<div>
+    <button  class="btn btn-secondary" 
+            type="button" 
+            @onclick="@(() =>GetLivenessFromExternalApi(null, null))">
+            Принудительный обмен данными
+    </button>
+</div>
+
+ <canvas id="capturedImage" width="480" height="360" style="display: none"></canvas>
+ <h1>Витальность: @LivenessResponse</h1>
+ <h1>Данные о персоне: @MatchResponse</h1>
+
+
 
 @code {
     private string LivenessResponse { get; set; }
     private string MatchResponse { get; set; }
+    private bool LivenessGood { get; set; }
+    private bool MatchGood { get; set; }
 
     private Timer _livenessTimer;
     private Timer _matchingTimer;
+
+    private bool CameraOn { get; set; }
 
     protected override void OnInitialized()
     {
@@ -42,6 +75,20 @@
         _matchingTimer.Elapsed += GetMatchFromExternalApi;
     }
 
+    private async Task ToggleCamera()
+    {
+        if(!CameraOn)
+        {
+            await StartCamera();
+            CameraOn = true;
+        }
+        else
+        {
+            await StopCamera();
+            CameraOn = false;
+        }
+    }
+
     private async Task StartCamera()
     {
         await JSRuntime.InvokeVoidAsync("startVideo");
@@ -50,11 +97,20 @@
         _matchingTimer.Enabled = true;
     }
 
+    private async Task StopCamera()
+    {
+        await JSRuntime.InvokeVoidAsync("stopVideo");
+
+        _livenessTimer.Enabled = false;
+        _matchingTimer.Enabled = false;
+    }
+
     private async void GetLivenessFromExternalApi(object source, ElapsedEventArgs e)
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
         LivenessResponse = await Repository.Post(imageBytes, Http, "Home/liveness");
+        LivenessGood = Convert.ToDouble(LivenessResponse) == 0 ? false : true;
         StateHasChanged();
     }
 
@@ -63,11 +119,14 @@
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
         MatchResponse = await Repository.Post(imageBytes, Http, "Home/match");
+        MatchGood = MatchResponse == String.Empty ? false : true;
     }
 
-    void IDisposable.Dispose()
+    async ValueTask IAsyncDisposable.DisposeAsync()
     {
         _livenessTimer.Enabled = false;
         _matchingTimer.Enabled = false;
+        if(CameraOn)
+            await StopCamera();
     }
 }

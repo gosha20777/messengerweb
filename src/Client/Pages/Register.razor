@@ -5,6 +5,7 @@
 @using System.Net.Http
 @using System.Timers
 @using MessengerWeb.Client.Services
+@implements IAsyncDisposable
 
 @inject IJSRuntime JSRuntime;
 @inject HttpClient Http
@@ -15,12 +16,12 @@
 </div>
 
 <div>
-    <video id="video" width="320" height="240" autoplay></video>
-    <canvas id="capturedImage" width="320" height="240" style="margin-left:20px"></canvas>
+    <video class="round-border" id="video" width="480" height="360" autoplay></video>
+    <canvas class="round-border"  id="capturedImage" width="480" height="360"></canvas>
 </div>
 
 <div>
-    <button type="button" class="btn btn-primary" @onclick="@(() => RegisterInExternalApi(null, null))">Зарегистрировать</button>
+    <button type="button" class="btn btn-secondary" @onclick="@(() => RegisterInExternalApi(null, null))">Зарегистрировать</button>
 </div>
 
  <h3>@RegisterResponse</h3>
@@ -38,6 +39,11 @@
         await JSRuntime.InvokeVoidAsync("startVideo");
     }
 
+    private async Task StopCamera()
+    {
+        await JSRuntime.InvokeVoidAsync("stopVideo");
+    }
+
     private async void RegisterInExternalApi(object source, ElapsedEventArgs e)
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
@@ -45,7 +51,14 @@
         string result = await Repository.Post(imageBytes, Http, "Home/register");
 
         if (result == "failed") RegisterResponse = "Лицо уже зарегистрировано";
-        else RegisterResponse = $"Новое лицо зарегистрировано! ID: \"{result}\"";
+        else if (result != String.Empty) RegisterResponse = $"Новое лицо зарегистрировано! ID: \"{result}\"";
+        else RegisterResponse = "Лицо отсутствует в кадре.";
+
         StateHasChanged();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        await StopCamera();
     }
 }
