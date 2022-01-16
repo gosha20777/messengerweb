@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -28,70 +29,40 @@ namespace MessengerWeb.Server.Controllers
             _configuration = configuration;
         }
 
-        [HttpPost("liveness")]
-        public async Task<IActionResult> PostFrameGetLiveness([FromForm(Name = "data")] IFormFile file)
+        [HttpPost("liveness/{engineId?}")]
+        public async Task<IActionResult> PostFrameGetLiveness(string engineId, [FromForm(Name = "data")] IFormFile file)
         {
             if (file is null)
                 return StatusCode(400, "No photo, formFile is null");
-            string content = "Liveness validation error. ";
+            string content = "Liveness error. ";
             using (Stream stream = file.OpenReadStream())
+            using (MemoryStream ms = new MemoryStream())
             {
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    stream.CopyTo(ms);
-                    var bytes = ms.ToArray();
+                stream.CopyTo(ms);
+                var bytes = ms.ToArray();
 
-                    var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
-                    var livenessTask = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetLivenessTask"], 
-                                                                             fileHashResponse.Hash, 
-                                                                             "fea041df-4e7e-4e59-ae9a-68a4500a1754");
-                    await Task.Delay(500);
-                    var livenessTaskResult = await _apiRequestsService.GetTaskResult(livenessTask.TaskId, Operation.Liveness);
-                    if (livenessTaskResult is LivenessTaskResult)
-                    {
-                        var livenessResult = (LivenessTaskResult)livenessTaskResult;
-                        content = livenessResult.Result.Score.ToString();
-                    }
+                var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
+                var livenessTask = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetLivenessTask"], 
+                                                                            fileHashResponse.Hash, 
+                                                                            engineId);
+                await Task.Delay(500);
+                var livenessTaskResult = await _apiRequestsService.GetTaskResult(livenessTask.TaskId, Operation.Liveness);
+                if (livenessTaskResult is LivenessTaskResult)
+                {
+                    var livenessResult = (LivenessTaskResult)livenessTaskResult;
+                    content = livenessResult.Result.Score.ToString();
+                    return Ok(content);
                 }
             }
-            return Ok(content);
+            return BadRequest(content);
         }
 
-        [HttpPost("match")]
-        public async Task<IActionResult> PostFrameGetMatch([FromForm(Name = "data")] IFormFile file)
+        [HttpPost("match/{engineId?}")]
+        public async Task<IActionResult> PostFrameGetMatch(string engineId, [FromForm(Name = "data")] IFormFile file)
         {
             if (file is null)
                 return StatusCode(400, "No photo, formFile is null");
-
-            string content = "Match validation error. ";
-            using (Stream stream = file.OpenReadStream())
-            {
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    stream.CopyTo(ms);
-                    var bytes = ms.ToArray();
-
-                    var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
-                    var matchTask = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetBestMatchTask"], 
-                                                                          fileHashResponse.Hash, 
-                                                                          "fea041df-4e7e-4e59-ae9a-68a4500a1754");
-                    await Task.Delay(500);
-                    var matchTaskResult = await _apiRequestsService.GetTaskResult(matchTask.TaskId, Operation.Match);
-                    if (matchTaskResult is CommonTaskResult)
-                    {
-                        var matchResult = (CommonTaskResult)matchTaskResult;
-                        content = matchResult.Result?.FaceId;
-                    }
-                }
-            }
-            return Ok(content);
-        }
-
-        [HttpPost("register")]
-        public async Task<IActionResult> Post([FromForm(Name = "data")] IFormFile file)
-        {
-            if (file is null)
-                return StatusCode(400, "No photo, formFile is null");
+            string content = "Match error. ";
 
             using (Stream stream = file.OpenReadStream())
             using (MemoryStream ms = new MemoryStream())
@@ -100,15 +71,55 @@ namespace MessengerWeb.Server.Controllers
                 var bytes = ms.ToArray();
 
                 var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
-                var livenessTaskResponse = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetRegisterTask"], 
-                                                                                    fileHashResponse.Hash, 
-                                                                                    "fea041df-4e7e-4e59-ae9a-68a4500a1754");
+                var matchTask = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetBestMatchTask"], 
+                                                                        fileHashResponse.Hash,
+                                                                        engineId);
                 await Task.Delay(500);
-                var matchTaskResult = await _apiRequestsService.GetTaskResult(livenessTaskResponse.TaskId, Operation.Register);
-                var matchResult = (CommonTaskResult)matchTaskResult;
-                return matchResult.Status == "failed" ? StatusCode(409, matchResult.Status) 
-                                                      : Ok(matchResult.Result.FaceId);
+                var matchTaskResult = await _apiRequestsService.GetTaskResult(matchTask.TaskId, Operation.Match);
+                if (matchTaskResult is CommonTaskResult)
+                {
+                    var matchResult = (CommonTaskResult)matchTaskResult;
+                    if (matchResult.Result?.FaceId is not null)
+                    {
+                        content = matchResult.Result?.FaceId;
+                        return Ok(content);
+                    }
+                }
             }
+            return BadRequest(content);
+        }
+
+        [HttpPost("register/{engineId?}")]
+        public async Task<IActionResult> Post(string engineId, [FromForm(Name = "data")] IFormFile file)
+        {
+            if (file is null)
+                return StatusCode(400, "No photo, formFile is null");
+            string content = "Match failed. ";
+
+            using (Stream stream = file.OpenReadStream())
+            using (MemoryStream ms = new MemoryStream())
+            {
+                stream.CopyTo(ms);
+                var bytes = ms.ToArray();
+
+                var fileHashResponse = await _apiRequestsService.GetExternalApiFileHash(bytes);
+                var registerTaskResponse = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetRegisterTask"], 
+                                                                                    fileHashResponse.Hash,
+                                                                                    engineId);
+                await Task.Delay(500);
+                var registerTaskResult = await _apiRequestsService.GetTaskResult(registerTaskResponse.TaskId, Operation.Register);
+                if (registerTaskResult is CommonTaskResult)
+                {
+                    var matchResult = (CommonTaskResult)registerTaskResult;
+                    if (matchResult.Result.FaceId is not null)
+                    {
+                        content = matchResult.Result.FaceId;
+                        return Ok(content);
+                    }
+
+                }
+            }
+            return Ok(content);
         }
     }
 }

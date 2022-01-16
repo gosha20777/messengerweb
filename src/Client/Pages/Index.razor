@@ -5,11 +5,14 @@
 @using System.Net.Http
 @using System.Timers
 @using MessengerWeb.Client.Services
+@using Microsoft.Extensions.Logging
 @implements IAsyncDisposable
 
 @inject IJSRuntime JSRuntime;
 @inject HttpClient Http
-@inject Services.EnginesHttpRepository Repository
+@inject EnginesHttpRepository Repository
+@inject Services.Settings SettingsService
+@inject ILogger<Index> Logger
 
 <h1>Детекция</h1>
 
@@ -25,7 +28,8 @@
 
 <div style="display: flex">
     <video class="round-border" id="video" width="480" height="360" controls></video>
-
+<div class="container">
+  <div class="column">
     @if(!LivenessGood)
     {
      <div class="alert alert-warning alert-dismissible fade show">
@@ -39,6 +43,8 @@
             <strong></strong> Не удалось опознать лицо. Угроза безопасности!
         </div>
     }
+    </div>
+    </div>
 </div>
 
 <div>
@@ -66,6 +72,8 @@
 
     private bool CameraOn { get; set; }
 
+    private EngineEntity CurrentEngine { get; set; }
+
     protected override void OnInitialized()
     {
         _livenessTimer = new Timer(interval: 5000);
@@ -73,6 +81,8 @@
 
         _livenessTimer.Elapsed += GetLivenessFromExternalApi;
         _matchingTimer.Elapsed += GetMatchFromExternalApi;
+
+        CurrentEngine = SettingsService.Engines.FirstOrDefault(e => e.IsSelected);
     }
 
     private async Task ToggleCamera()
@@ -104,13 +114,21 @@
         _livenessTimer.Enabled = false;
         _matchingTimer.Enabled = false;
     }
-
+    string result;
     private async void GetLivenessFromExternalApi(object source, ElapsedEventArgs e)
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
-        LivenessResponse = await Repository.Post(imageBytes, Http, "Home/liveness");
-        LivenessGood = Convert.ToDouble(LivenessResponse) == 0 ? false : true;
+
+        if (CurrentEngine.Name == "NTech Find Face")
+        {
+            await JSRuntime.InvokeAsync<string>("recordVideoAndSendToServer", "Home/liveness", CurrentEngine.Id);
+            LivenessResponse = await JSRuntime.InvokeAsync<string>("getServerResponse");
+        }
+        else
+            LivenessResponse = await Repository.Post(imageBytes, Http, "Home/liveness", CurrentEngine.Id);
+
+        LivenessGood = Double.TryParse(LivenessResponse, out _) && Convert.ToDouble(LivenessResponse) == 0 ? false : true;
         StateHasChanged();
     }
 
@@ -118,7 +136,7 @@
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
-        MatchResponse = await Repository.Post(imageBytes, Http, "Home/match");
+        MatchResponse = await Repository.Post(imageBytes, Http, "Home/match", CurrentEngine.Id);
         MatchGood = MatchResponse == String.Empty ? false : true;
     }
 

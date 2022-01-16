@@ -10,18 +10,19 @@
 @inject IJSRuntime JSRuntime;
 @inject HttpClient Http
 @inject Services.EnginesHttpRepository Repository
+@inject Services.Settings SettingsService
 
 <div>
     <h1>Регистрация</h1>
 </div>
 
-<div>
-    <video class="round-border" id="video" width="480" height="360" autoplay></video>
-    <canvas class="round-border"  id="capturedImage" width="480" height="360"></canvas>
+<div style="margin-bottom:10px">
+    <button type="button" class="btn btn-secondary" @onclick="@(() => RegisterInExternalApi(null, null))">Зарегистрировать</button>
 </div>
 
 <div>
-    <button type="button" class="btn btn-secondary" @onclick="@(() => RegisterInExternalApi(null, null))">Зарегистрировать</button>
+    <video class="round-border" id="video" width="480" height="360" autoplay></video>
+    <canvas class="round-border" id="capturedImage" width="480" height="360"></canvas>
 </div>
 
  <h3>@RegisterResponse</h3>
@@ -48,9 +49,11 @@
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
-        string result = await Repository.Post(imageBytes, Http, "Home/register");
+        string result = await Repository.Post(imageBytes, Http, "Home/register", SettingsService.Engines
+                                                                                                .First(e=>e.IsSelected)
+                                                                                                .Id);
 
-        if (result == "failed") RegisterResponse = "Лицо уже зарегистрировано";
+        if (result.Contains("failed")) RegisterResponse = "Лицо уже зарегистрировано";
         else if (result != String.Empty) RegisterResponse = $"Новое лицо зарегистрировано! ID: \"{result}\"";
         else RegisterResponse = "Лицо отсутствует в кадре.";
 

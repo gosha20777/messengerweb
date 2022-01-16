@@ -75,7 +75,7 @@ namespace MessengerWeb.Server.Services
                 }
             }
             else
-                return JsonSerializer.Deserialize<FaceApiTaskResultError>(content);
+                return null;
 
         }
 

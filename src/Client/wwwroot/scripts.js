@@ -26,7 +26,79 @@ function startVideo() {
     }
 }
 
-function stopVideo(stream) {
+var lengthInMS = 500;
+var serverResponse;
+
+function getServerResponse() {
+    return serverResponse;
+}
+
+function recordVideoAndSendToServer(url, engineId) {
+    record().then(recordedChunks => {
+        const headers = {
+            engine_id: engineId,
+            type: 'video/mp4'
+        };
+        let recordedBlob = new Blob(recordedChunks, headers);
+        var formData = new FormData();
+        formData.append("bla", "bla");
+        formData.append('data', recordedBlob);
+        var xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log(this.responseText);
+                serverResponse = this.responseText
+            }
+            else
+                serverResponse = JSON.stringify({ "status 500": "server internal error" });
+        };
+
+        xhr.open('POST', url + "/" + engineId);
+        xhr.setRequestHeader("engine-id", engineId);
+
+        xhr.send(formData);
+    });
+}
+
+const blobToBase64 = blob => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    return new Promise(resolve => {
+        reader.onloadend = () => {
+            resolve(reader.result);
+        };
+    });
+};
+
+function record() {
+    let recorder = new MediaRecorder(_stream);
+    let data = [];
+
+    recorder.ondataavailable = event => data.push(event.data);
+    recorder.start();
+    console.log(recorder.state + " for " + (lengthInMS / 1000) + " seconds...");
+
+    let stopped = new Promise((resolve, reject) => {
+        recorder.onstop = resolve;
+        recorder.onerror = event => reject(event.name);
+    });
+
+    let recorded = wait(lengthInMS).then(
+        () => recorder.state == "recording" && recorder.stop()
+    );
+
+    return Promise.all([
+        stopped,
+        recorded
+    ]).then(() => data );
+}
+
+function wait(delayInMS) {
+    return new Promise(resolve => setTimeout(resolve, delayInMS));
+}
+
+function stopVideo() {
     _stream.stop();
 }
 
