@@ -47,8 +47,8 @@
     </div>
 </div>
 
-<div>
-    <button  class="btn btn-secondary" 
+<div style="margin-top:10px">
+    <button class="btn btn-secondary" 
             type="button" 
             @onclick="@(() =>GetLivenessFromExternalApi(null, null))">
             Принудительный обмен данными
@@ -59,13 +59,11 @@
  <h1>Витальность: @LivenessResponse</h1>
  <h1>Данные о персоне: @MatchResponse</h1>
 
-
-
 @code {
     private string LivenessResponse { get; set; }
     private string MatchResponse { get; set; }
-    private bool LivenessGood { get; set; }
-    private bool MatchGood { get; set; }
+    private bool LivenessGood { get; set; } = true;
+    private bool MatchGood { get; set; } = true;
 
     private Timer _livenessTimer;
     private Timer _matchingTimer;
@@ -126,9 +124,9 @@
             LivenessResponse = await JSRuntime.InvokeAsync<string>("getServerResponse");
         }
         else
-            LivenessResponse = await Repository.Post(imageBytes, Http, "Home/liveness", CurrentEngine.Id);
+            LivenessResponse = await Repository.Post(imageBytes, "Home/liveness", CurrentEngine.Id);
 
-        LivenessGood = Double.TryParse(LivenessResponse, out _) && Convert.ToDouble(LivenessResponse) == 0 ? false : true;
+        LivenessGood = Double.TryParse(LivenessResponse, out _) && Convert.ToDouble(LivenessResponse) != 0 ? true : false;
         StateHasChanged();
     }
 
@@ -136,8 +134,8 @@
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
-        MatchResponse = await Repository.Post(imageBytes, Http, "Home/match", CurrentEngine.Id);
-        MatchGood = MatchResponse == String.Empty ? false : true;
+        MatchResponse = await Repository.Post(imageBytes, "Home/match", CurrentEngine.Id);
+        MatchGood = MatchResponse.Contains("error") ? false : true;
     }
 
     async ValueTask IAsyncDisposable.DisposeAsync()

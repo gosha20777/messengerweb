@@ -18,15 +18,19 @@ namespace MessengerWeb.Server.Controllers
     public class HomeController : ControllerBase
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly HttpClient httpClient = new HttpClient();
         private readonly ApiRequestsService _apiRequestsService;
         private readonly IConfiguration _configuration;
+        private readonly ApplicationContext _dbContext;
 
-        public HomeController(ILogger<HomeController> logger, ApiRequestsService apiRequestsService, IConfiguration configuration)
+        public HomeController(ILogger<HomeController> logger, 
+                              ApiRequestsService apiRequestsService, 
+                              IConfiguration configuration,
+                              ApplicationContext context)
         {
             _logger = logger;
             _apiRequestsService = apiRequestsService;
             _configuration = configuration;
+            _dbContext = context;
         }
 
         [HttpPost("liveness/{engineId?}")]
@@ -34,7 +38,7 @@ namespace MessengerWeb.Server.Controllers
         {
             if (file is null)
                 return StatusCode(400, "No photo, formFile is null");
-            string content = "Liveness error. ";
+
             using (Stream stream = file.OpenReadStream())
             using (MemoryStream ms = new MemoryStream())
             {
@@ -50,11 +54,10 @@ namespace MessengerWeb.Server.Controllers
                 if (livenessTaskResult is LivenessTaskResult)
                 {
                     var livenessResult = (LivenessTaskResult)livenessTaskResult;
-                    content = livenessResult.Result.Score.ToString();
-                    return Ok(content);
+                    return Ok(livenessResult.Result.Score.ToString());
                 }
             }
-            return BadRequest(content);
+            return StatusCode(409, "failed");
         }
 
         [HttpPost("match/{engineId?}")]
@@ -62,7 +65,6 @@ namespace MessengerWeb.Server.Controllers
         {
             if (file is null)
                 return StatusCode(400, "No photo, formFile is null");
-            string content = "Match error. ";
 
             using (Stream stream = file.OpenReadStream())
             using (MemoryStream ms = new MemoryStream())
@@ -81,12 +83,12 @@ namespace MessengerWeb.Server.Controllers
                     var matchResult = (CommonTaskResult)matchTaskResult;
                     if (matchResult.Result?.FaceId is not null)
                     {
-                        content = matchResult.Result?.FaceId;
-                        return Ok(content);
+                        var personMatched = _dbContext.Persons.FirstOrDefault(p => p.UUID == matchResult.Result.FaceId);
+                        return Ok(personMatched);
                     }
                 }
             }
-            return BadRequest(content);
+            return StatusCode(409, "not identified");
         }
 
         [HttpPost("register/{engineId?}")]
@@ -94,7 +96,6 @@ namespace MessengerWeb.Server.Controllers
         {
             if (file is null)
                 return StatusCode(400, "No photo, formFile is null");
-            string content = "Match failed. ";
 
             using (Stream stream = file.OpenReadStream())
             using (MemoryStream ms = new MemoryStream())
@@ -110,16 +111,34 @@ namespace MessengerWeb.Server.Controllers
                 var registerTaskResult = await _apiRequestsService.GetTaskResult(registerTaskResponse.TaskId, Operation.Register);
                 if (registerTaskResult is CommonTaskResult)
                 {
-                    var matchResult = (CommonTaskResult)registerTaskResult;
-                    if (matchResult.Result.FaceId is not null)
+                    var registerResult = (CommonTaskResult)registerTaskResult;
+                    
+                    if (registerResult.Result.FaceId is not null)
                     {
-                        content = matchResult.Result.FaceId;
-                        return Ok(content);
+                        if(registerResult.Result.FaceId == String.Empty)
+                        {
+                            return StatusCode(409, "no_face");
+                        }
+                        if (_dbContext.Persons.Any(p => p.UUID == registerResult.Result.FaceId))
+                        {
+                            return StatusCode(409, "exists");
+                        }
+                        else
+                        {
+                            return Ok(registerResult.Result.FaceId);
+                        }
                     }
-
                 }
             }
-            return Ok(content);
+            return StatusCode(409, "failed");
+        }
+
+        [HttpPost("save_person")]
+        public async Task<IActionResult> Post(Person person)
+        {
+            _dbContext.Persons.Add(person);
+            await _dbContext.SaveChangesAsync();
+            return Ok();
         }
     }
 }

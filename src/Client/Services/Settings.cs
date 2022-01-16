@@ -13,7 +13,7 @@ namespace MessengerWeb.Client.Services
                 new EngineEntity()
                 {
                     Name = "Luna Platform",
-                    Id = "fea041df-4e7e-4e59-ae9a-68a4500a1754",
+                    Id = "63518595-bca0-47ed-805f-72f5c6c350b1",
                     IsSelected = true,
                 },
                 new EngineEntity()
