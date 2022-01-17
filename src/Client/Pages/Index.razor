@@ -6,6 +6,7 @@
 @using System.Timers
 @using MessengerWeb.Client.Services
 @using Microsoft.Extensions.Logging
+@using System.Globalization
 @implements IAsyncDisposable
 
 @inject IJSRuntime JSRuntime;
@@ -126,7 +127,10 @@
         else
             LivenessResponse = await Repository.Post(imageBytes, "Home/liveness", CurrentEngine.Id);
 
-        LivenessGood = Double.TryParse(LivenessResponse, out _) && Convert.ToDouble(LivenessResponse) != 0 ? true : false;
+        LivenessGood = Double.TryParse(LivenessResponse, 
+                                        NumberStyles.Any, 
+                                        CultureInfo.InvariantCulture,  
+                                        out _) && Convert.ToDouble(LivenessResponse) != 0 ? true : false;
         Logger.LogInformation($"LivenessGood: {LivenessGood}");
 
         StateHasChanged();
