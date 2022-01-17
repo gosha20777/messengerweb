@@ -127,6 +127,8 @@
             LivenessResponse = await Repository.Post(imageBytes, "Home/liveness", CurrentEngine.Id);
 
         LivenessGood = Double.TryParse(LivenessResponse, out _) && Convert.ToDouble(LivenessResponse) != 0 ? true : false;
+        Logger.LogInformation($"LivenessGood: {LivenessGood}");
+
         StateHasChanged();
     }
 
@@ -135,7 +137,11 @@
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
         MatchResponse = await Repository.Post(imageBytes, "Home/match", CurrentEngine.Id);
-        MatchGood = MatchResponse.Contains("error") ? false : true;
+        MatchGood = MatchResponse.Contains("not_identified") ? false : true;
+        Logger.LogInformation($"Matched: {MatchGood}");
+
+        StateHasChanged();
+
     }
 
     async ValueTask IAsyncDisposable.DisposeAsync()

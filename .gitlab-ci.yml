@@ -1,6 +1,5 @@
 stages:
   - build
-  - publish_win-x64
   - publish_linux-x64
   
 #  - analyze
@@ -12,15 +11,7 @@ build_job:
         - dotnetcorewin
     script:
         - dotnet build '.\src\MessengerWeb.sln'
-        
-publish_job_win:
-    stage: publish_win-x64
-    tags:
-        - dotnetcorewin
-    script:
-        - Remove-Item \MessengerWeb_publish_win\* -Recurse -Force
-        - dotnet publish '.\src\Server\MessengerWeb.Server.csproj' -o \MessengerWeb_publish_win --runtime win-x64 --self-contained true
-        
+
 publish_job_linux:
     stage: publish_linux-x64
     tags:

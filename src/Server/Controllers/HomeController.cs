@@ -88,7 +88,7 @@ namespace MessengerWeb.Server.Controllers
                     }
                 }
             }
-            return StatusCode(409, "not identified");
+            return StatusCode(409, "not_identified");
         }
 
         [HttpPost("register/{engineId?}")]
