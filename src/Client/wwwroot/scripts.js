@@ -26,7 +26,7 @@ function startVideo() {
     }
 }
 
-var lengthInMS = 500;
+var lengthInMS = 1000;
 var serverResponse;
 
 function getServerResponse() {
