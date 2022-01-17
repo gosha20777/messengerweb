@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MessengerWeb.Server.Controllers
@@ -49,7 +50,6 @@ namespace MessengerWeb.Server.Controllers
                 var livenessTask = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetLivenessTask"], 
                                                                             fileHashResponse.Hash, 
                                                                             engineId);
-                await Task.Delay(500);
                 var livenessTaskResult = await _apiRequestsService.GetTaskResult(livenessTask.TaskId, Operation.Liveness);
                 if (livenessTaskResult is LivenessTaskResult)
                 {
@@ -59,6 +59,7 @@ namespace MessengerWeb.Server.Controllers
             }
             return StatusCode(409, "failed");
         }
+
 
         [HttpPost("match/{engineId?}")]
         public async Task<IActionResult> PostFrameGetMatch(string engineId, [FromForm(Name = "data")] IFormFile file)
@@ -76,7 +77,6 @@ namespace MessengerWeb.Server.Controllers
                 var matchTask = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetBestMatchTask"], 
                                                                         fileHashResponse.Hash,
                                                                         engineId);
-                await Task.Delay(500);
                 var matchTaskResult = await _apiRequestsService.GetTaskResult(matchTask.TaskId, Operation.Match);
                 if (matchTaskResult is CommonTaskResult)
                 {
@@ -107,7 +107,6 @@ namespace MessengerWeb.Server.Controllers
                 var registerTaskResponse = await _apiRequestsService.ProcessTask(_configuration["ApiGates:GetRegisterTask"], 
                                                                                     fileHashResponse.Hash,
                                                                                     engineId);
-                await Task.Delay(500);
                 var registerTaskResult = await _apiRequestsService.GetTaskResult(registerTaskResponse.TaskId, Operation.Register);
                 if (registerTaskResult is CommonTaskResult)
                 {

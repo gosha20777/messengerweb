@@ -49,27 +49,41 @@ namespace MessengerWeb.Server.Services
             return JsonSerializer.Deserialize<FaceApiTaskResponse>(content);
         }
 
+        internal async Task<HttpResponseMessage> WaitUntilTaskEnd( string url)
+        {
+            HttpResponseMessage response = new();
+            string responseContent = "started";
+            while (!responseContent.Contains("finished") && 
+                   !responseContent.Contains("failed") &&
+                   !String.IsNullOrWhiteSpace(responseContent))
+            {
+                using var request = new HttpRequestMessage(new HttpMethod("GET"), url);
+                request.Headers.TryAddWithoutValidation("accept", "application/json");
+                await Task.Delay(500);
+                response = await _httplClient.SendAsync(request);
+                responseContent = await response.Content.ReadAsStringAsync();
+            }
+            return response;
+        }
 
         internal async Task<IFaceApiTaskResult> GetTaskResult(string taskId, Operation operation)
         {
             HttpResponseMessage response = new();
             string url = $"{_configuration["ApiGates:GetTaskResult"]}?uuid={taskId}";
-            using (var request = new HttpRequestMessage(new HttpMethod("GET"), url))
-            {
-                request.Headers.TryAddWithoutValidation("accept", "application/json");
-                response = await _httplClient.SendAsync(request);
-            }
-            string content = await response.Content.ReadAsStringAsync();
+            string responseContent = String.Empty;
 
+            response = await WaitUntilTaskEnd(url);
+
+            responseContent = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {
                 switch(operation)
                 {
                     case Operation.Liveness:
-                        return JsonSerializer.Deserialize<LivenessTaskResult>(content);
+                        return JsonSerializer.Deserialize<LivenessTaskResult>(responseContent);
                     case Operation.Register:
                     case Operation.Match:
-                        return JsonSerializer.Deserialize<CommonTaskResult>(content);
+                        return JsonSerializer.Deserialize<CommonTaskResult>(responseContent);
                     default:
                         return null;
                 }

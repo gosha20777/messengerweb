@@ -38,6 +38,13 @@
     </div>
     }
 
+    @if(!NtechLivenessGood)
+    {
+     <div class="alert alert-warning alert-dismissible fade show">
+        <strong></strong> Лица в кадре не обнаружены.
+    </div>
+    }
+
     @if(!MatchGood)
     {
          <div class="alert alert-warning alert-dismissible fade show">
@@ -57,13 +64,15 @@
 </div>
 
  <canvas id="capturedImage" width="480" height="360" style="display: none"></canvas>
- <h1>Витальность: @LivenessResponse</h1>
+ <h1>Витальность: @LivenessResponse @LivenessFromNtech</h1>
  <h1>Данные о персоне: @MatchResponse</h1>
 
 @code {
     private string LivenessResponse { get; set; }
+    private static string LivenessFromNtech { get; set; }
     private string MatchResponse { get; set; }
     private bool LivenessGood { get; set; } = true;
+    private static bool NtechLivenessGood { get; set; } = true;
     private bool MatchGood { get; set; } = true;
 
     private Timer _livenessTimer;
@@ -75,13 +84,23 @@
 
     protected override void OnInitialized()
     {
-        _livenessTimer = new Timer(interval: 5000);
-        _matchingTimer = new Timer(interval: 5000);
+        CurrentEngine = SettingsService.Engines.FirstOrDefault(e => e.IsSelected);
+
+        int timerIntervalinMs = CurrentEngine.Engine == Engine.Ntech ? 5000 : 5000;
+
+        _livenessTimer = new Timer(interval: timerIntervalinMs);
+        _matchingTimer = new Timer(interval: timerIntervalinMs);
 
         _livenessTimer.Elapsed += GetLivenessFromExternalApi;
         _matchingTimer.Elapsed += GetMatchFromExternalApi;
+        ClearPage();
 
-        CurrentEngine = SettingsService.Engines.FirstOrDefault(e => e.IsSelected);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            ClearPage();
     }
 
     private async Task ToggleCamera()
@@ -112,33 +131,45 @@
 
         _livenessTimer.Enabled = false;
         _matchingTimer.Enabled = false;
+        ClearPage();
     }
+
     string result;
     private async void GetLivenessFromExternalApi(object source, ElapsedEventArgs e)
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
 
-        if (CurrentEngine.Name == "NTech Find Face")
+        if (CurrentEngine.Engine == Engine.Ntech)
         {
-            await JSRuntime.InvokeAsync<string>("recordVideoAndSendToServer", "Home/liveness", CurrentEngine.Id);
-            LivenessResponse = await JSRuntime.InvokeAsync<string>("getServerResponse");
+            LivenessResponse = await JSRuntime.InvokeAsync<string>("recordVideoAndSendToServer", "Home/liveness", CurrentEngine.UUID);
         }
         else
-            LivenessResponse = await Repository.Post(imageBytes, "Home/liveness", CurrentEngine.Id);
-        Logger.LogInformation($"LivenessResponse: {LivenessResponse}");
-        var liveness = LivenessResponse.Replace('.', ',');
-        LivenessGood = Double.TryParse(liveness, out _) && Convert.ToDouble(liveness) != 0 ? true : false;
-        Logger.LogInformation($"LivenessGood: {LivenessGood}");
+        {
+            LivenessResponse = await Repository.Post(imageBytes, "Home/liveness", CurrentEngine.UUID);
 
+            Logger.LogInformation($"LivenessResponse: {LivenessResponse}");
+            var liveness = LivenessResponse?.Replace('.', ',');
+            LivenessGood = Double.TryParse(liveness, out _) && Convert.ToDouble(liveness) != 0 ? true : false;
+            Logger.LogInformation($"LivenessGood: {LivenessGood}");
+        }
         StateHasChanged();
     }
+
+    [JSInvokable("GetLivenessFromNtech")]
+    public static void GetLivenessFromNtech(string nTechLivenessResult)
+    {
+        LivenessFromNtech = nTechLivenessResult;
+        NtechLivenessGood = Double.TryParse(LivenessFromNtech.Replace('.', ','), out _) 
+                            && Convert.ToDouble(LivenessFromNtech.Replace('.', ',')) != 0 ? true : false;
+    }
+
 
     private async void GetMatchFromExternalApi(object source, ElapsedEventArgs e)
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
-        MatchResponse = await Repository.Post(imageBytes, "Home/match", CurrentEngine.Id);
+        MatchResponse = await Repository.Post(imageBytes, "Home/match", CurrentEngine.UUID);
         MatchGood = MatchResponse.Contains("not_identified") ? false : true;
         Logger.LogInformation($"Matched: {MatchGood}");
 
@@ -150,7 +181,22 @@
     {
         _livenessTimer.Enabled = false;
         _matchingTimer.Enabled = false;
+
+        _livenessTimer.Elapsed -= GetLivenessFromExternalApi;
+        _matchingTimer.Elapsed -= GetMatchFromExternalApi;
+
         if(CameraOn)
             await StopCamera();
+        ClearPage();
+    }
+
+    public void ClearPage()
+    {
+        LivenessFromNtech = String.Empty;
+        LivenessResponse = String.Empty;
+        MatchResponse = String.Empty;
+        LivenessGood = true;
+        NtechLivenessGood = true;
+        InvokeAsync(StateHasChanged);
     }
 }

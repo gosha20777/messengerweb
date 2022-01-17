@@ -41,17 +41,15 @@ function recordVideoAndSendToServer(url, engineId) {
         };
         let recordedBlob = new Blob(recordedChunks, headers);
         var formData = new FormData();
-        formData.append("bla", "bla");
         formData.append('data', recordedBlob);
         var xhr = new XMLHttpRequest();
 
         xhr.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
                 console.log(this.responseText);
-                serverResponse = this.responseText
+                DotNet.invokeMethod('MessengerWeb.Client', 'GetLivenessFromNtech', this.responseText);
+                
             }
-            else
-                serverResponse = JSON.stringify({ "status 500": "server internal error" });
         };
 
         xhr.open('POST', url + "/" + engineId);

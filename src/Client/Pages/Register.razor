@@ -86,7 +86,7 @@
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
         var imageBytes = await JSRuntime.InvokeAsync<string>("GetImageData", "capturedImage", "image/jpeg");
 
-        string result = await Repository.Post(imageBytes, "Home/register", CurrentEngine.Id);
+        string result = await Repository.Post(imageBytes, "Home/register", CurrentEngine.UUID);
 
         if (result.Contains("failed") || result.Contains("no_face"))
         {
