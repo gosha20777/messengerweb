@@ -126,9 +126,9 @@
         }
         else
             LivenessResponse = await Repository.Post(imageBytes, "Home/liveness", CurrentEngine.Id);
-
-        LivenessGood = Double.TryParse(LivenessResponse.Replace('.', ','),  
-                                        out _) && Convert.ToDouble(LivenessResponse) != 0 ? true : false;
+        Logger.LogInformation($"LivenessResponse: {LivenessResponse}");
+        var liveness = LivenessResponse.Replace('.', ',');
+        LivenessGood = Double.TryParse(liveness, out _) && Convert.ToDouble(liveness) != 0 ? true : false;
         Logger.LogInformation($"LivenessGood: {LivenessGood}");
 
         StateHasChanged();
