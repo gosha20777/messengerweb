@@ -38,13 +38,6 @@
     </div>
     }
 
-    @if(!NtechLivenessGood)
-    {
-     <div class="alert alert-warning alert-dismissible fade show">
-        <strong></strong> Лица в кадре не обнаружены.
-    </div>
-    }
-
     @if(!MatchGood)
     {
          <div class="alert alert-warning alert-dismissible fade show">
@@ -64,15 +57,14 @@
 </div>
 
  <canvas id="capturedImage" width="480" height="360" style="display: none"></canvas>
- <h1>Витальность: @LivenessResponse @LivenessFromNtech</h1>
+ <h1>Витальность: @LivenessResponse</h1>
  <h1>Данные о персоне: @MatchResponse</h1>
 
 @code {
     private string LivenessResponse { get; set; }
-    private static string LivenessFromNtech { get; set; }
     private string MatchResponse { get; set; }
+
     private bool LivenessGood { get; set; } = true;
-    private static bool NtechLivenessGood { get; set; } = true;
     private bool MatchGood { get; set; } = true;
 
     private Timer _livenessTimer;
@@ -82,7 +74,7 @@
 
     private EngineEntity CurrentEngine { get; set; }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         CurrentEngine = SettingsService.Engines.FirstOrDefault(e => e.IsSelected);
 
@@ -93,14 +85,10 @@
 
         _livenessTimer.Elapsed += GetLivenessFromExternalApi;
         _matchingTimer.Elapsed += GetMatchFromExternalApi;
+
+        var lDotNetReference = DotNetObjectReference.Create(this);
+        await JSRuntime.InvokeVoidAsync("dotNetGlobal.SetDotnetReference", lDotNetReference);
         ClearPage();
-
-    }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-            ClearPage();
     }
 
     private async Task ToggleCamera()
@@ -134,7 +122,6 @@
         ClearPage();
     }
 
-    string result;
     private async void GetLivenessFromExternalApi(object source, ElapsedEventArgs e)
     {
         await JSRuntime.InvokeVoidAsync("Snap", "video", "capturedImage");
@@ -157,11 +144,11 @@
     }
 
     [JSInvokable("GetLivenessFromNtech")]
-    public static void GetLivenessFromNtech(string nTechLivenessResult)
+    public void GetLivenessFromNtech(string nTechLivenessResult)
     {
-        LivenessFromNtech = nTechLivenessResult;
-        NtechLivenessGood = Double.TryParse(LivenessFromNtech.Replace('.', ','), out _) 
-                            && Convert.ToDouble(LivenessFromNtech.Replace('.', ',')) != 0 ? true : false;
+        LivenessResponse = nTechLivenessResult;
+        LivenessGood = Double.TryParse(LivenessResponse.Replace('.', ','), out _) 
+                            && Convert.ToDouble(LivenessResponse.Replace('.', ',')) != 0 ? true : false;
     }
 
 
@@ -192,11 +179,9 @@
 
     public void ClearPage()
     {
-        LivenessFromNtech = String.Empty;
         LivenessResponse = String.Empty;
         MatchResponse = String.Empty;
         LivenessGood = true;
-        NtechLivenessGood = true;
         InvokeAsync(StateHasChanged);
     }
 }

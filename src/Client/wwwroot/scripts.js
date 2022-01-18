@@ -11,7 +11,7 @@ function startVideo() {
                 this.getAudioTracks().forEach(function (track) {
                     track.stop();
                 });
-                this.getVideoTracks().forEach(function (track) { //in case... :)
+                this.getVideoTracks().forEach(function (track) {
                     track.stop();
                 });
             };
@@ -33,7 +33,13 @@ function getServerResponse() {
     return serverResponse;
 }
 
-function recordVideoAndSendToServer(url, engineId) {
+var dotNetGlobal = {};
+dotNetGlobal.DotNetReference = null;
+dotNetGlobal.SetDotnetReference = function (pDotNetReference) {
+    dotNetGlobal.DotNetReference = pDotNetReference;
+};
+
+function recordVideoAndSendToServer(url, engineId, instance, callback) {
     record().then(recordedChunks => {
         const headers = {
             engine_id: engineId,
@@ -47,8 +53,8 @@ function recordVideoAndSendToServer(url, engineId) {
         xhr.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
                 console.log(this.responseText);
-                DotNet.invokeMethod('MessengerWeb.Client', 'GetLivenessFromNtech', this.responseText);
-                
+                // DotNet.invokeMethod('MessengerWeb.Client', 'GetLivenessFromNtech', this.responseText);
+                dotNetGlobal.DotNetReference.invokeMethod('GetLivenessFromNtech', this.responseText);
             }
         };
 
