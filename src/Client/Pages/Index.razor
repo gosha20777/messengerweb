@@ -82,7 +82,7 @@ else
     private string LivenessScore { get; set; }  = String.Empty;
     private string MatchScore { get; set; } = String.Empty;
 
-    private bool LivenessGood => Double.TryParse(LivenessScore, out liveness) && liveness > 0 ? true : false;
+    private bool LivenessGood => Double.TryParse(LivenessScore.Replace('.', ','), out liveness) && liveness > 0 ? true : false;
     private bool MatchGood => MatchScore.Contains("not_identified") ? false : true;
 
     private Timer _livenessTimer;
