@@ -1,5 +1,15 @@
 ﻿var _stream;
 
+var videoLengthInMS = 1000;
+var serverResponse;
+
+var dotNetGlobal = {};
+dotNetGlobal.DotNetReference = null;
+dotNetGlobal.SetDotnetReference = function (pDotNetReference) {
+    dotNetGlobal.DotNetReference = pDotNetReference;
+};
+
+
 function startVideo() {
     var video = document.getElementById('video');
 
@@ -26,19 +36,6 @@ function startVideo() {
     }
 }
 
-var lengthInMS = 1000;
-var serverResponse;
-
-function getServerResponse() {
-    return serverResponse;
-}
-
-var dotNetGlobal = {};
-dotNetGlobal.DotNetReference = null;
-dotNetGlobal.SetDotnetReference = function (pDotNetReference) {
-    dotNetGlobal.DotNetReference = pDotNetReference;
-};
-
 function recordVideoAndSendToServer(url, engineId, instance, callback) {
     record().then(recordedChunks => {
         const headers = {
@@ -54,7 +51,7 @@ function recordVideoAndSendToServer(url, engineId, instance, callback) {
             if (this.readyState == 4 && this.status == 200) {
                 console.log(this.responseText);
                 // DotNet.invokeMethod('MessengerWeb.Client', 'GetLivenessFromNtech', this.responseText);
-                dotNetGlobal.DotNetReference.invokeMethod('GetLivenessFromNtech', this.responseText);
+                dotNetGlobal.DotNetReference.invokeMethod('MessengerWeb.Client', 'GetLivenessFromNtech', this.responseText);
             }
         };
 
@@ -81,14 +78,14 @@ function record() {
 
     recorder.ondataavailable = event => data.push(event.data);
     recorder.start();
-    console.log(recorder.state + " for " + (lengthInMS / 1000) + " seconds...");
+    console.log(recorder.state + " for " + (videoLengthInMS / 1000) + " seconds...");
 
     let stopped = new Promise((resolve, reject) => {
         recorder.onstop = resolve;
         recorder.onerror = event => reject(event.name);
     });
 
-    let recorded = wait(lengthInMS).then(
+    let recorded = wait(videoLengthInMS).then(
         () => recorder.state == "recording" && recorder.stop()
     );
 

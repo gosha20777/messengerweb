@@ -129,7 +129,7 @@
 
         if (CurrentEngine.Engine == Engine.Ntech)
         {
-            LivenessResponse = await JSRuntime.InvokeAsync<string>("recordVideoAndSendToServer", "Home/liveness", CurrentEngine.UUID);
+            await JSRuntime.InvokeAsync<string>("recordVideoAndSendToServer", "Home/liveness", CurrentEngine.UUID);
         }
         else
         {
@@ -149,6 +149,10 @@
         LivenessResponse = nTechLivenessResult;
         LivenessGood = Double.TryParse(LivenessResponse.Replace('.', ','), out _) 
                             && Convert.ToDouble(LivenessResponse.Replace('.', ',')) != 0 ? true : false;
+        Logger.LogInformation($"LivenessResponse: {LivenessResponse}");
+        Logger.LogInformation($"LivenessGood: {LivenessGood}");
+
+        InvokeAsync(StateHasChanged);
     }
 
 
