@@ -90,8 +90,6 @@ namespace MessengerWeb.Server.Services
             }
             else
                 return null;
-
         }
-
     }
 }
