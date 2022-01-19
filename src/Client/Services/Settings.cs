@@ -27,7 +27,7 @@ namespace MessengerWeb.Client.Services
                 new EngineEntity()
                 {
                     Engine = Engine.Tevian,
-                    Name = "Tevian Platform",
+                    Name = "Tevian Platform (отключен)",
                     UUID = "",
                     IsSelected = false,
                 }

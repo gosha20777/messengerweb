@@ -20,7 +20,9 @@ namespace MessengerWeb.Client
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
             builder.Services.AddScoped<EnginesHttpRepository>();
+            builder.Services.AddTransient<JSwrapper>();
             builder.Services.AddScoped<Settings>();
+            builder.Services.AddScoped<JsonHelper>();
 
             await builder.Build().RunAsync();
         }

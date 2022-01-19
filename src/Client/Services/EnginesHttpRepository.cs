@@ -22,7 +22,6 @@ namespace MessengerWeb.Client.Services
             var form = new MultipartFormDataContent();
             form.Add(contents, "data", "image");
             var response = await http.PostAsync($"{url}/{engineId}", form);
-
             return await response.Content.ReadAsStringAsync();
         }
 

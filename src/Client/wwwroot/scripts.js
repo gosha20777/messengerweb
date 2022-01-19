@@ -1,7 +1,6 @@
 ﻿var _stream;
 
 var videoLengthInMS = 1000;
-var serverResponse;
 
 var dotNetGlobal = {};
 dotNetGlobal.DotNetReference = null;
@@ -36,7 +35,7 @@ function startVideo() {
     }
 }
 
-function recordVideoAndSendToServer(url, engineId, instance, callback) {
+function recordVideoAndSendToServer(url, engineId) {
     record().then(recordedChunks => {
         const headers = {
             engine_id: engineId,
@@ -50,7 +49,6 @@ function recordVideoAndSendToServer(url, engineId, instance, callback) {
         xhr.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
                 console.log(this.responseText);
-                // DotNet.invokeMethod('MessengerWeb.Client', 'GetLivenessFromNtech', this.responseText);
                 dotNetGlobal.DotNetReference.invokeMethod('GetLivenessFromNtech', this.responseText);
             }
         };
@@ -109,14 +107,12 @@ window.Snap = async (src, dest) => {
     ctx.drawImage(video, 0, 0, 480, 360);
 }
 
-// Get image as base64 string
 window.GetImageData = async (el, format) => {
     let canvas = document.getElementById(el);
     let dataUrl = canvas.toDataURL(format);
     return dataUrl.split(',')[1];
 }
 
-// Helper functions
 function get2DContext(el) {
     return document.getElementById(el).getContext('2d');
 }
