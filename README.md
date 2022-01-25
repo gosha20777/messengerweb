@@ -35,5 +35,7 @@ MessengerWeb.Shared
 Это классическое ASP.Net core приложение с API для взаимодействия с клиентским приложением. Имеет БД SQLite и EF Core ORM для сохранения UUID обрабатываемой персоны из external api. Вместе с UUID в таблице также хранистя доп. информация (ФИО и должность). Сохраняет эти данные из клиентской формы с помощью метода контроллера /save, и возвращает эти данные из БД при успешном матчинге в методе контроллера /match.
 Содержит вспомогательный сервис ApiRequestsService.cs с объектом HttpClient для обмена данными с external api, маршруты для которого вынесены в appsettings.json.
 ## 6. Сборка и запуск
-```dotnet publish '.\src\Server\MessengerWeb.Server.csproj' -o \MessengerWeb_publish_linux --runtime linux-x64 --self-contained true```
+```
+dotnet publish '.\src\Server\MessengerWeb.Server.csproj' -o \MessengerWeb_publish_linux --runtime linux-x64 --self-contained true
+```
 На выходе получится исполняемый файл ELF и набор dll, готовый для запуска под linux.
