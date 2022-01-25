@@ -19,9 +19,9 @@ MessengerWeb.Shared
 ## 4. UI
 Клиентское приложение - это SPA с тремя основными компонентами:
 
-/
-/register
-/settings
+- /
+- /register
+- /settings
 
 Корневой маршрут (располагается в Index.razor) - это страница, осуществляющая матчинг и liveness из видеопотока. Использует роуты /Home/liveness и /Home/match в серверном приложении.
 Маршрут /register (Register.razor) - осуществляет регистрацию лица. Использует роуты /Home/register и /Home/save в серверном приложении.
