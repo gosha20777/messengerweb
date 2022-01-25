@@ -174,7 +174,6 @@ else
         Person = JsonHelper.ConvertToPerson(MatchScore);
         Logger.LogInformation($"MatchScore: {MatchScore} IsMatched: {MatchGood}");
         StateHasChanged();
-
     }
 
     async ValueTask IAsyncDisposable.DisposeAsync()
