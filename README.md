@@ -1,10 +1,10 @@
 # IBTP MessengerWeb Client
 ## 1. Структура решения:
-Blazor Webassembly ASP .Net Core 5 hosted приложение. Состоит из трех проектов:
+Blazor Webassembly ASP .Net Core 5 hosted приложение. Состоит из двух основных проектов:
 
-MessengerWeb.Client
+- MessengerWeb.Client
 Blazor WASM проект, содержащий верстку в razor страницах, набор UI сервисов, сервиса Http запросов в серверную часть, и набор javascript функций для взаимодействия с элементом <'video />, захвата кадров и видео
-MessengerWeb.Server
+- MessengerWeb.Server
 ASP .Net Core проект. Здесь находятся методы контроллеров, ожидающие запросы от клиентского приложения
 MessengerWeb.Shared
 Библиотека классов, инкапсулирующая сущности и модели, используемые в обоих проектах.
