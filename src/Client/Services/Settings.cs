@@ -24,13 +24,6 @@ namespace MessengerWeb.Client.Services
                     UUID = "8bd64949-b530-4523-9631-e38545760443",
                     IsSelected = false,
                 },
-                new EngineEntity()
-                {
-                    Engine = Engine.Tevian,
-                    Name = "Tevian Platform (отключен)",
-                    UUID = "",
-                    IsSelected = false,
-                }
             };
         }
     }
