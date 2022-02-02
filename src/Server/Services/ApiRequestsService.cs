@@ -51,18 +51,22 @@ namespace MessengerWeb.Server.Services
 
         internal async Task<HttpResponseMessage> WaitUntilTaskEnd( string url)
         {
+            int connectTries = 50;
             HttpResponseMessage response = new();
             string responseContent = "started";
-            while (!responseContent.Contains("finished") && 
-                   !responseContent.Contains("failed") &&
-                   !String.IsNullOrWhiteSpace(responseContent))
-            {
-                using var request = new HttpRequestMessage(new HttpMethod("GET"), url);
-                request.Headers.TryAddWithoutValidation("accept", "application/json");
-                await Task.Delay(500);
-                response = await _httplClient.SendAsync(request);
-                responseContent = await response.Content.ReadAsStringAsync();
-            }
+                for (int i = 0; i < connectTries; i++)
+                {
+                    if (!responseContent.Contains("finished") &&
+                       !responseContent.Contains("failed") &&
+                       !String.IsNullOrWhiteSpace(responseContent))
+                    {
+                        using var request = new HttpRequestMessage(new HttpMethod("GET"), url);
+                        request.Headers.TryAddWithoutValidation("accept", "application/json");
+                        await Task.Delay(500);
+                        response = await _httplClient.SendAsync(request);
+                        responseContent = await response.Content.ReadAsStringAsync();
+                    }
+                    }
             return response;
         }
 
