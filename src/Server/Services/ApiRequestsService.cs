@@ -51,23 +51,20 @@ namespace MessengerWeb.Server.Services
 
         internal async Task<HttpResponseMessage> WaitUntilTaskEnd( string url)
         {
-            int connectTries = 50;
             HttpResponseMessage response = new();
             string responseContent = "started";
-            for (int i = 0; i < connectTries; i++)
+            while (!responseContent.Contains("finished") &&
+                   !responseContent.Contains("failed") &&
+                   !String.IsNullOrWhiteSpace(responseContent))
             {
-                if (!responseContent.Contains("finished") &&
-                    !responseContent.Contains("failed") &&
-                    !String.IsNullOrWhiteSpace(responseContent))
-                {
-                    using var request = new HttpRequestMessage(new HttpMethod("GET"), url);
-                    request.Headers.TryAddWithoutValidation("accept", "application/json");
-                    response = await _httplClient.SendAsync(request);
-                    responseContent = await response.Content.ReadAsStringAsync();
-                }
+                using var request = new HttpRequestMessage(new HttpMethod("GET"), url);
+                request.Headers.TryAddWithoutValidation("accept", "application/json");
                 await Task.Delay(500);
+                response = await _httplClient.SendAsync(request);
+                responseContent = await response.Content.ReadAsStringAsync();
             }
             return response;
+
         }
 
         internal async Task<IFaceApiTaskResult> GetTaskResult(string taskId, Operation operation)
