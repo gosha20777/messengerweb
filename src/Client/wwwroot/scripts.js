@@ -1,6 +1,6 @@
 ﻿var _stream;
 
-var videoLengthInMS = 1000;
+var videoLengthInMS = 500;
 
 var dotNetGlobal = {};
 dotNetGlobal.DotNetReference = null;
@@ -98,7 +98,10 @@ function wait(delayInMS) {
 }
 
 function stopVideo() {
-    _stream.stop();
+    if (_stream !== "undefined")
+        _stream.stop();
+    else
+        alert("Chrome заблокировал видео на данной странице. Попробуйте запустить браузер с аргументами start chrome --unsafely-treat-insecure-origin-as-secure=\"http://10.124.33.92:5003\"");
 }
 
 window.Snap = async (src, dest) => {

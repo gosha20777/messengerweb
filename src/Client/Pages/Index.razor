@@ -161,9 +161,12 @@ else
     [JSInvokable("GetLivenessFromNtech")]
     public void GetLivenessFromNtech(string nTechLivenessResult)
     {
-        LivenessScore = nTechLivenessResult;
-        Logger.LogInformation($"LivenessScore: {LivenessScore}, IsGood: {LivenessGood}");
-        InvokeAsync(StateHasChanged);
+        if (CurrentEngine.Engine == Client.Services.Engine.Ntech)
+        {
+            LivenessScore = nTechLivenessResult;
+            Logger.LogInformation($"LivenessScore: {LivenessScore}, IsGood: {LivenessGood}");
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     private async void GetMatchFromExternalApi(object source, ElapsedEventArgs e)

@@ -54,19 +54,19 @@ namespace MessengerWeb.Server.Services
             int connectTries = 50;
             HttpResponseMessage response = new();
             string responseContent = "started";
-                for (int i = 0; i < connectTries; i++)
+            for (int i = 0; i < connectTries; i++)
+            {
+                if (!responseContent.Contains("finished") &&
+                    !responseContent.Contains("failed") &&
+                    !String.IsNullOrWhiteSpace(responseContent))
                 {
-                    if (!responseContent.Contains("finished") &&
-                       !responseContent.Contains("failed") &&
-                       !String.IsNullOrWhiteSpace(responseContent))
-                    {
-                        using var request = new HttpRequestMessage(new HttpMethod("GET"), url);
-                        request.Headers.TryAddWithoutValidation("accept", "application/json");
-                        await Task.Delay(500);
-                        response = await _httplClient.SendAsync(request);
-                        responseContent = await response.Content.ReadAsStringAsync();
-                    }
-                    }
+                    using var request = new HttpRequestMessage(new HttpMethod("GET"), url);
+                    request.Headers.TryAddWithoutValidation("accept", "application/json");
+                    response = await _httplClient.SendAsync(request);
+                    responseContent = await response.Content.ReadAsStringAsync();
+                }
+                await Task.Delay(500);
+            }
             return response;
         }
 
