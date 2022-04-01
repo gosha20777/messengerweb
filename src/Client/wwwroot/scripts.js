@@ -1,6 +1,6 @@
-﻿var _stream;
+﻿let _stream;
 
-var videoLengthInMS = 800;
+let videoLengthInMS = 800;
 
 var dotNetGlobal = {};
 dotNetGlobal.DotNetReference = null;
