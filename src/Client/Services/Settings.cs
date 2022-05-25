@@ -12,23 +12,25 @@ namespace MessengerWeb.Client.Services
             {
                 new EngineEntity()
                 {
-                    Engine = Engine.Luna,
-                    Name = "Luna Platform",
-                    UUID = "315c9de1-317d-4f78-bc4b-e10896e48e6c",
+                    //Engine = Engine.Luna,
+                    Engine = Engine.Tevian,
+                    Name = "Vision Labs Platform",
+                    UUID = "92ef5815-8e4d-46f1-aba4-c4f269cb8bf7",
                     IsSelected = true,
                 },
                 new EngineEntity()
                 {
-                    Engine = Engine.Ntech,
-                    Name = "NTech Find Face",
-                    UUID = "d4f26c41-f080-4321-8d69-26cf06db1bc9",
+                    //Engine = Engine.Ntech,
+                    Engine = Engine.Tevian,
+                    Name = "NTech Platform",
+                    UUID = "9a948cd1-51e5-479d-9250-46196c0b7e11",
                     IsSelected = false,
                 },
                 new EngineEntity()
                 {
                     Engine = Engine.Tevian,
                     Name = "Tevian Platform",
-                    UUID = "a720a37c-89bf-4ce2-8dab-90f4ac4dd5f1",
+                    UUID = "38f1a29c-4b3e-49b4-9dec-dfe848a35a36",
                     IsSelected = false,
                 },
             };
