@@ -5,6 +5,7 @@ services:
       context: src
       dockerfile: Dockerfile
     container_name: front-end
+    env_file: ./src/.env
     ports:
       - 80:5000
     volumes:

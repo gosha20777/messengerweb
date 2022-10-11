@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System;
 
 namespace MessengerWeb.Client.Services
 {
@@ -12,25 +13,31 @@ namespace MessengerWeb.Client.Services
             {
                 new EngineEntity()
                 {
-                    //Engine = Engine.Luna,
-                    Engine = Engine.Tevian,
+                    Engine = Engine.Luna,
                     Name = "Vision Labs Platform",
-                    UUID = "92ef5815-8e4d-46f1-aba4-c4f269cb8bf7",
+                    UUID = "2a2a5e3b-29c6-426f-97cc-d9e1fb701ad3",
                     IsSelected = true,
                 },
                 new EngineEntity()
                 {
-                    //Engine = Engine.Ntech,
-                    Engine = Engine.Tevian,
+                    Engine = Engine.Ntech,
                     Name = "NTech Platform",
-                    UUID = "9a948cd1-51e5-479d-9250-46196c0b7e11",
+                    UUID = "6cf3b728-4cf9-4262-b4b2-315c019515de",
                     IsSelected = false,
                 },
                 new EngineEntity()
                 {
                     Engine = Engine.Tevian,
                     Name = "Tevian Platform",
-                    UUID = "38f1a29c-4b3e-49b4-9dec-dfe848a35a36",
+                    UUID = "3aac91d1-319f-46d8-bd52-35693457f498",
+                    IsSelected = false,
+                },
+                new EngineEntity()
+                {
+                    //Facenet and tevian are have the same API
+                    Engine = Engine.Tevian, 
+                    Name = "Facenet (ours)",
+                    UUID = "d733c7a4-7da4-47d4-aa25-289b9a479819",
                     IsSelected = false,
                 },
             };
